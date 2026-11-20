@@ -1,113 +1,99 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="web/assets/freevideo.svg">
-    <img alt="FreeVideo" src="web/assets/freevideo-light.svg" width="65%">
-  </picture>
+
+# VYDRIA
+
+### A local-first foundation for AI video creation
+
+**Create, experiment, and build with video-generation models on hardware you control.**
+
+[Source project](https://github.com/FlashML-org/FreeVideo) · [OpenVDN](https://github.com/OpenVDN) · [Issues](https://github.com/schelaalynn-cell/Vydria/issues)
+
 </div>
 
-<p align="center">
-| <a href="https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo.exe"><b>Windows</b></a> | <a href="https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo-Mac-arm64.dmg"><b>macOS</b></a> | <a href="https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo-Linux-x86_64.AppImage"><b>Linux</b></a> | <a href="docs/community-results.md"><b>Community Results</b></a> | <a href="https://freevideo-community.pages.dev/#gallery"><b>Gallery</b></a> | <a href="https://discord.gg/MsA277cJzZ"><b>Discord</b></a> | <a href="https://freevideo-community.pages.dev/qq"><b>QQ Group</b></a> | <a href="https://freevideo-community.pages.dev/wechat"><b>WeChat Group</b></a> |
-</p>
+---
 
-<p align="center">English · <a href="README.zh-CN.md">中文</a></p>
+## What is Vydria?
 
-Make videos on the computer you already own. Powered by [Video DeltaNet (VDN)](https://openvdn.github.io/), FreeVideo runs MiniMax H3 in as little as 8 GB of VRAM and 16 GB of RAM, with acceleration adapted to your&nbsp;hardware.
+Vydria is an independently maintained project built from the open-source [FreeVideo](https://github.com/FlashML-org/FreeVideo) codebase. Its starting point is a local inference workflow for MiniMax H3, powered by [Video DeltaNet (VDN)](https://openvdn.github.io/) and designed to make video generation more practical on capable consumer hardware.
 
-https://github.com/user-attachments/assets/ecda7d0d-7fbe-4e0c-8c29-8f3315bafc15
+The goal is to evolve this foundation into a dependable, extensible video-generation engine: one that can be developed and operated independently, while also serving as the video capability within the broader **Zyvano** AI creative platform.
 
-<p align="center"><a href="https://freevideo-community.pages.dev/#gallery">More clips and the four quality levels side by side in the gallery →</a></p>
+**Project status:** Vydria is at the foundation and adaptation stage. The inherited FreeVideo functionality is the starting point; Vydria-specific improvements, integrations, releases, and support commitments will be documented here as they are implemented and verified. This repository does not yet claim a separate Vydria release or a completed Zyvano integration.
 
-## News
+## Current technical foundation
 
-- **2026-11-10** · **[v0.5.0](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.5.0): H3 Image.** Pictures up to 16 MP locally, from 8 GB of VRAM.
-- **2026-10-13** · **[v0.4.0](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.4.0): AI agents, minute-long videos and an editing view.** Let an AI agent such as Claude Code or Codex make videos on its own, generate videos over a minute long, and edit them on a timeline.
-- **2026-10-07** · **[v0.3.2](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.3.2): preview first.** See a half-resolution preview first and finish only the videos you like.
-- **2026-10-07** · **[v0.3.0](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.3.0): a faster int8 model.** GeForce and RTX 30-series cards switch to int8; an RTX 3090 makes a 5-second video about 2.3x faster.
-- **2026-10-06** · **[Gallery](https://freevideo-community.pages.dev/#gallery) is live.** Watch 20-second clips made with FreeVideo, and the four quality levels side by side.
-- **2026-10-06** · **[v0.2.3](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.2.3): videos carry their workflow.** Drop a FreeVideo video onto the ComfyUI canvas to restore its prompt, seed and settings. Earlier videos can get theirs too.
-- **2026-10-05** · **[v0.2.0](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.2.0): four quality levels.** Choose Light, Medium, High or Max for each video; higher levels give higher quality but take longer. Results can be exported as sharing images or videos with the generation time and GPU.
-- **2026-10-05** · **[v0.1.2](https://github.com/FlashML-org/FreeVideo/releases/tag/v0.1.2): FreeVideo on Mac.** Apple silicon Macs generate MiniMax H3 videos locally (preview).
-- **2026-10-03** · **Community LoRAs.** Use MiniMax H3 LoRAs right in your workflow. See [examples](docs/LoRA.md).
-- **2026-10-02** · **FreeVideo is open source.** MiniMax H3 on consumer GPUs with as little as 8 GB of VRAM.
+The upstream codebase provides the following capabilities. Their availability in a Vydria build depends on the inherited implementation and its dependencies:
 
-## About
+- **Local video inference** using the VDN-H3 / MiniMax H3 model family.
+- **Hardware-adaptive execution** that selects supported compute formats and attention implementations for the available GPU.
+- **Memory-conscious inference** using weight streaming, prefetching, and chunked computation.
+- **Multimodal conditioning** with text prompts, frame inputs, and image, video, or audio references where supported by the model workflow.
+- **ComfyUI integration** for composing and running generation workflows.
+- **LoRA workflows** and configurable generation settings supported by the underlying implementation.
 
-FreeVideo is a local inference engine for MiniMax H3 on consumer GPUs, built on [OpenVDN](https://github.com/OpenVDN)'s 8-step [VDN-H3](https://huggingface.co/OpenVDN/vdn-minimax-h3) model with [Video DeltaNet](https://openvdn.github.io/)'s hybrid attention.
+Hardware requirements, model availability, operating-system support, and performance vary. Consult the upstream documentation and model terms before attempting to run a workflow.
 
-It coordinates VRAM, system memory and disk, adapting weight placement, compute precision and attention kernels to the available hardware. FreeVideo runs as a ComfyUI plugin, with launchers for Windows, macOS and Linux. Its core features include:
+## Direction
 
-- **Hardware-adaptive execution**: Chooses the weight format for each GPU, int8 on GeForce and RTX 30-series cards and FP8 on workstation and datacenter cards, and automatically probes the available attention kernels.
-- **Low-memory inference**: Weight streaming, asynchronous prefetching and chunked computation keep peak memory low, enabling inference with as little as 8 GB of VRAM and 16 GB of RAM.
-- **Multimodal inputs**: Text prompts, first and last frames, and image, video and audio references.
-- **Community LoRAs**: Use MiniMax H3 LoRAs in your workflow. See [examples](docs/LoRA.md).
-- **ComfyUI integration**: A dedicated creative workspace inside ComfyUI that supports two-pass sampling and batch generation and keeps a history of past creations. For finer control, switch to the node view to add LoRAs or customize the workflow.
-- **One-click deployment**: The Windows, Mac and Linux launchers set up ComfyUI, the runtime environment and the models, reuse existing models, and support offline installation.
+Vydria will be developed around a few engineering priorities:
 
-## Getting Started
+1. **Reliable inference:** make model execution, memory planning, and hardware compatibility observable and predictable.
+2. **Usable workflows:** improve the experience from prompt and reference inputs through preview, generation, editing, and export.
+3. **Extensible architecture:** keep model adapters, execution backends, workflow integration, and user-facing interfaces clearly separated.
+4. **Reproducibility:** make generation settings, model versions, and workflow metadata easier to inspect and reproduce.
+5. **Zyvano integration:** expose video-generation capabilities through a defined interface so Zyvano can orchestrate media creation without tightly coupling its main application to the inference runtime.
 
-### Windows
+These are development goals, not a statement that every capability is already implemented.
 
-1. [Download FreeVideo.exe](https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo.exe) and run it.
-2. Select an existing ComfyUI folder or install a new one. Existing model folders can be added for reuse; missing models are downloaded automatically.
-3. Click **Install & launch**. ComfyUI opens in the browser with the FreeVideo workspace.
+## Upstream heritage and attribution
 
-<div align="center">
-  <img alt="FreeVideo creative workspace" src="https://github.com/user-attachments/assets/7647a6f8-4306-403c-b147-45d7a393e18d" width="92%">
-</div>
+Vydria is derived from **[FlashML-org/FreeVideo](https://github.com/FlashML-org/FreeVideo)**. The upstream project, its contributors, and its history remain acknowledged. This repository is an independent development effort and is not presented as an official FreeVideo release or as endorsed by the upstream maintainers.
 
-**Security software:** FreeVideo.exe is code-signed. If security software blocks FreeVideo.exe or quarantines files in the FreeVideo folder, check that the SHA-256 of FreeVideo.exe matches the value on the release page, then restore the files and add the FreeVideo folder to the software's exclusion list.
+The underlying model and research foundations include:
 
-**Offline installation:** Download the packages from [Quark](https://pan.quark.cn/s/c51235b84618) and drag the ZIP files into the launcher without extracting them. A fully offline installation needs the four model packs (video model, text encoder, video & audio decoder, and sampling caches), plus the environment package for a new ComfyUI installation. After importing only the environment package, you can also choose **Automatic download** for the models (v0.3.12 or newer). The audio reference cache is optional and is used only when a reference includes audio.
+- [OpenVDN / VDN-H3](https://github.com/OpenVDN)
+- [Video DeltaNet](https://openvdn.github.io/)
+- [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3)
+- [ComfyUI](https://github.com/Comfy-Org/ComfyUI)
+- [Hugging Face Diffusers](https://github.com/huggingface/diffusers)
+- [SageAttention](https://github.com/thu-ml/SageAttention)
 
-### macOS (Apple silicon preview)
+Please consult the upstream repository for the original project history, contributor acknowledgements, research citation, and detailed technical documentation.
 
-1. [Download FreeVideo-Mac-arm64.dmg](https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo-Mac-arm64.dmg), open it and drag **FreeVideo.app** into **Applications**.
-2. Open FreeVideo, then select an existing ComfyUI folder or install a new one. Existing model folders can be added for reuse; the runtime environment and missing models are downloaded automatically.
-3. Click **Install & launch**. ComfyUI opens in the browser with the FreeVideo workspace.
+## Getting started
 
-This preview has been tested on an M5 Mac with 24 GB of unified memory. See the [Mac&nbsp;guide](docs/Mac.md) for generation times and memory.
+Vydria-specific installation instructions and verified release artifacts will be published here when they are ready.
 
-The Mac preview isn't notarized by Apple yet, so macOS blocks it the first time you open it. Download it only from the Releases page, then check the file and approve it as described in the [Mac guide](docs/Mac.md#first-open). This approves FreeVideo only; your other security settings stay as they are.
+For now, developers examining this codebase should:
 
-### Existing ComfyUI
+1. Review the [upstream FreeVideo README](https://github.com/FlashML-org/FreeVideo#readme) for the inherited setup process and platform-specific guidance.
+2. Review the upstream [execution-planning documentation](https://github.com/FlashML-org/FreeVideo/blob/main/docs/execution-planning.md).
+3. Confirm that the required model files can be obtained and used under their applicable terms.
+4. Treat upstream download links and binaries as **FreeVideo artifacts**, not Vydria releases.
 
-Install FreeVideo as a custom node:
+Do not assume that an upstream binary, model package, or installation command is an officially supported Vydria distribution.
 
-```bash
-cd ComfyUI/custom_nodes
-git clone https://github.com/FlashML-org/FreeVideo.git
-```
+## Development and contributions
 
-Restart ComfyUI, open **Workflow → Browse Templates → FreeVideo → FreeVideo-All-in-One**, and complete the setup in FreeVideo **Settings**.
+Development should preserve a clear distinction between inherited upstream behavior and Vydria-specific changes. When proposing a change:
 
-To update, run `git pull` in `custom_nodes/FreeVideo` (or update the node in ComfyUI-Manager) and restart ComfyUI.
+- Describe the problem and intended behavior.
+- Include relevant tests or reproducible steps.
+- Document hardware, model, and platform assumptions.
+- Preserve upstream copyright notices and applicable license terms.
+- Avoid claiming performance or compatibility improvements without reproducible evidence.
 
-### Linux
+Use [GitHub Issues](https://github.com/schelaalynn-cell/Vydria/issues) for bugs and development discussions.
 
-**Desktop:** [Download FreeVideo-Linux-x86_64.AppImage](https://github.com/FlashML-org/FreeVideo/releases/latest/download/FreeVideo-Linux-x86_64.AppImage), make it executable and open it, then follow the same steps as on Windows.
+## Licensing
 
-**Terminal or server:**
+The upstream FreeVideo code is released under the [Apache License 2.0](https://github.com/FlashML-org/FreeVideo/blob/main/LICENSE). This project retains applicable upstream license terms and notices. Review the repository's `LICENSE` and any third-party notices before redistributing modified builds.
 
-```bash
-git clone https://github.com/FlashML-org/FreeVideo.git && cd FreeVideo
-./setup.sh
-```
+**Model weights are separately licensed.** The VDN-H3 / MiniMax H3 model weights are subject to the [MiniMax H3 Community License](https://huggingface.co/OpenVDN/vdn-minimax-h3-edge/blob/main/LICENSE), which includes additional use restrictions. The code license does not grant unrestricted rights to model weights or other third-party assets. Check each dependency's and model's current terms independently.
 
-Setup installs FreeVideo, ComfyUI and the models, then opens FreeVideo in the browser. Afterwards, type `freevideo` to open it again. On a server, connect from your own computer through SSH, or run `freevideo server --listen 0.0.0.0` for an access link on your local network. See the [Linux guide](docs/Linux.md).
+## Research citation
 
-### More details
-
-- [FreeVideo Adaptive Execution Planner](docs/execution-planning.md)
-- [Community results](docs/community-results.md)
-- [Thanks to the community](docs/community-thanks.md)
-
-### Support
-
-Report bugs in [GitHub Issues](https://github.com/FlashML-org/FreeVideo/issues), or ask questions on [Discord](https://discord.gg/MsA277cJzZ), [QQ](https://freevideo-community.pages.dev/qq) or [WeChat](https://freevideo-community.pages.dev/wechat).
-
-## Citation
-
-FreeVideo is based on VDN-H3. If you use FreeVideo in your research, please cite the [Video DeltaNet paper](https://arxiv.org/abs/2609.20744):
+For work based on Video DeltaNet, consult and cite the [Video DeltaNet paper](https://arxiv.org/abs/2609.20744):
 
 ```bibtex
 @article{xi2026videodeltanet,
@@ -118,32 +104,10 @@ FreeVideo is based on VDN-H3. If you use FreeVideo in your research, please cite
 }
 ```
 
-## Team
+---
 
-### Project Team
+<div align="center">
 
-[Bowen Xue](https://github.com/KBRASK) · [Shuo Yang](https://github.com/andy-yang-1) · [Haocheng Xi](https://github.com/haochengxi) · [Xiaoze Fan](https://github.com/jason-fxz) · [Chenfeng Xu](https://github.com/chenfengxu714)
+**Vydria — an independent video-engineering project in development.**
 
-### Special Thanks
-
-Special thanks to [**AIwood爱屋研究室**](https://space.bilibili.com/503934057) and [**T8star-Aix**](https://space.bilibili.com/385085361) for testing the project and providing valuable feedback.
-
-*Listed in chronological order of participation.*
-
-## Acknowledgment
-
-We thank [OpenVDN](https://github.com/OpenVDN) for [Video DeltaNet / VDN-H3](https://github.com/OpenVDN/vdn-minimax-h3) and its open-source model weights, training code and inference implementation.
-
-We thank Impossible Research for providing computation resources.
-
-We also thank [MiniMax H3](https://huggingface.co/MiniMaxAI/MiniMax-H3) for the base model and the following projects:
-[ComfyUI](https://github.com/Comfy-Org/ComfyUI),
-[Diffusers](https://github.com/huggingface/diffusers),
-[SageAttention](https://github.com/thu-ml/SageAttention),
-the [MiniMax H3 latent upscaler](https://huggingface.co/LBH-123-AI/Minimax_h3_latent_Upscaler),
-the [H3 text encoder for ComfyUI](https://huggingface.co/t8star/Vdn-Minimax-H3-Comfy) and
-[Qt for Python](https://doc.qt.io/qtforpython-6/).
-
-## License
-
-The code is released under the [Apache License 2.0](LICENSE). The model weights are licensed under the [MiniMax H3 Community License](https://huggingface.co/OpenVDN/vdn-minimax-h3-edge/blob/main/LICENSE), which includes territorial and acceptable-use restrictions.
+</div>
