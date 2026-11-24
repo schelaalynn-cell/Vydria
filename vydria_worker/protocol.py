@@ -7,7 +7,10 @@ user credentials, or platform secrets in job envelopes.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 import re
+import time
 from typing import Any
 from uuid import UUID
 
@@ -21,10 +24,21 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _MODEL_ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,95}$")
 _VERSION = re.compile(r"^[A-Za-z0-9][A-Za-z0-9.+_-]{0,63}$")
 _OPAQUE_REF = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_IDEMPOTENCY_KEY = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$")
+_WORKER_ID = re.compile(r"^vydria-[A-Za-z0-9][A-Za-z0-9._-]{0,72}$")
 
 
 class ProtocolError(ValueError):
     """Raised when a worker message violates the versioned protocol."""
+
+
+def canonical_request_sha256(value: dict[str, Any]) -> str:
+    """Hash the exact wire request, excluding only its self-referential digest."""
+    if not isinstance(value, dict):
+        raise ProtocolError("job must be an object")
+    payload = {key: item for key, item in value.items() if key != "request_sha256"}
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
 
 
 def _mapping(value: Any, name: str, allowed: set[str], required: set[str]) -> dict[str, Any]:
@@ -78,7 +92,7 @@ class WorkerRegistration:
              "device", "vram_bytes", "ram_bytes"},
             {"worker_id", "engine_version", "protocol_version", "tasks", "models", "device", "ram_bytes"})
         worker_id = _text(data["worker_id"], "worker_id", 80)
-        if not worker_id.startswith("vydria-"):
+        if not _WORKER_ID.fullmatch(worker_id):
             raise ProtocolError("worker_id must use the vydria- prefix")
         version = _text(data["protocol_version"], "protocol_version", 8)
         if version != PROTOCOL_VERSION:
@@ -136,7 +150,7 @@ class JobEnvelope:
     protocol_version: str = PROTOCOL_VERSION
 
     @classmethod
-    def from_dict(cls, value: Any) -> "JobEnvelope":
+    def from_dict(cls, value: Any, *, now: int | None = None) -> "JobEnvelope":
         allowed = {"job_id", "idempotency_key", "owner_id", "project_id", "task",
                    "model_id", "model_version", "prompt", "width", "height", "frames",
                    "fps", "seed", "input_asset_refs", "expires_at", "request_sha256",
@@ -165,10 +179,15 @@ class JobEnvelope:
             if isinstance(seed, bool) or not isinstance(seed, int) or not -(2**63) <= seed < 2**63:
                 raise ProtocolError("seed must be a signed 64-bit integer")
         digest = _text(data["request_sha256"], "request_sha256", 64, _SHA256)
+        if digest != canonical_request_sha256(data):
+            raise ProtocolError("request_sha256 does not match the canonical job request")
         expiry = _integer(data["expires_at"], "expires_at", 1, 2**63 - 1)
+        current_time = int(time.time()) if now is None else _integer(now, "now", 0, 2**63 - 1)
+        if expiry <= current_time:
+            raise ProtocolError("job has expired")
         return cls(
             job_id=_uuid(data["job_id"], "job_id"),
-            idempotency_key=_text(data["idempotency_key"], "idempotency_key", 128),
+            idempotency_key=_text(data["idempotency_key"], "idempotency_key", 128, _IDEMPOTENCY_KEY),
             owner_id=_uuid(data["owner_id"], "owner_id"),
             project_id=_uuid(data["project_id"], "project_id"),
             task=task,
