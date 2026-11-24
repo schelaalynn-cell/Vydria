@@ -5,6 +5,7 @@ from vydria_worker.protocol import (
     JobCompletion,
     JobEnvelope,
     ProgressEvent,
+    ProgressSequenceTracker,
     ProtocolError,
     WorkerRegistration,
     canonical_request_sha256,
@@ -104,6 +105,22 @@ class WorkerProtocolTests(unittest.TestCase):
             ProgressEvent.from_dict({
                 "job_id": str(uuid4()), "sequence": 0, "stage": "inference", "progress": 101
             })
+
+    def test_progress_tracker_rejects_replay_reordering_and_regression(self):
+        tracker = ProgressSequenceTracker()
+        job_id = str(uuid4())
+        first = {"job_id": job_id, "sequence": 1, "stage": "accepted", "progress": 5}
+        second = {"job_id": job_id, "sequence": 2, "stage": "inference", "progress": 45}
+        tracker.accept(first)
+        tracker.accept(second)
+        with self.assertRaisesRegex(ProtocolError, "sequence"):
+            tracker.accept(second)
+        with self.assertRaisesRegex(ProtocolError, "sequence"):
+            tracker.accept({**first, "sequence": 1, "progress": 50})
+        with self.assertRaisesRegex(ProtocolError, "must not decrease"):
+            tracker.accept({"job_id": job_id, "sequence": 3, "stage": "decoding", "progress": 40})
+        tracker.forget(job_id)
+        self.assertEqual(tracker.accept(first).sequence, 1)
 
     def test_completion_requires_opaque_output_reference(self):
         result = JobCompletion.from_dict({
