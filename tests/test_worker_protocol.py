@@ -7,6 +7,7 @@ from vydria_worker.protocol import (
     ProgressEvent,
     ProtocolError,
     WorkerRegistration,
+    canonical_request_sha256,
 )
 
 
@@ -42,6 +43,7 @@ class WorkerProtocolTests(unittest.TestCase):
             "request_sha256": "a" * 64,
         }
         value.update(overrides)
+        value["request_sha256"] = canonical_request_sha256(value)
         return value
 
     def test_registration_accepts_exact_model_versions(self):
@@ -75,6 +77,23 @@ class WorkerProtocolTests(unittest.TestCase):
             JobEnvelope.from_dict(self.job(model_version=""))
         with self.assertRaises(ProtocolError):
             JobEnvelope.from_dict(self.job(width=16384))
+
+    def test_job_rejects_expired_requests(self):
+        value = self.job(expires_at=999)
+        with self.assertRaisesRegex(ProtocolError, "expired"):
+            JobEnvelope.from_dict(value, now=1000)
+        self.assertEqual(JobEnvelope.from_dict(self.job(expires_at=1001), now=1000).expires_at, 1001)
+
+    def test_job_rejects_tampered_request_digest(self):
+        value = self.job()
+        value["width"] = 1920
+        with self.assertRaisesRegex(ProtocolError, "request_sha256"):
+            JobEnvelope.from_dict(value)
+
+    def test_job_rejects_malformed_idempotency_keys(self):
+        for key in ("", "contains spaces", "../unsafe"):
+            with self.subTest(key=key), self.assertRaises(ProtocolError):
+                JobEnvelope.from_dict(self.job(idempotency_key=key))
 
     def test_progress_is_bounded_and_typed(self):
         result = ProgressEvent.from_dict({
