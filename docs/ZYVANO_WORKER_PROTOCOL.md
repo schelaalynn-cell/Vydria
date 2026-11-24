@@ -50,3 +50,12 @@ python -m unittest discover -s tests -p 'test_worker_protocol.py' -v
 ```
 
 These tests validate message shape and security boundaries; they do not prove GPU inference, network transport, or end-to-end Zyvano integration.
+
+
+## Current Zyvano backend compatibility checkpoint
+
+The current Zyvano backend exposes an internal Pulse API at `/internal/pulse/video-jobs` using the backend-only `x-zyvano-pulse-key` credential. Its request contract is a script plus a 30/60-second duration, resolution, orientation, and MP4 format. The current Pulse worker executes through Zyvano's own `NativeGenerationService` and database-backed lease queue.
+
+That API is **not** the v1 Vydria worker protocol: it has no Vydria worker registration, heartbeat, broker job-pull, progress-event ingestion, scoped asset transfer, or worker cancellation endpoints. The general Zyvano native-generation worker registry is also currently database/Redis-backed inside the Zyvano deployment, not a remote worker broker.
+
+Therefore, do not point a Vydria worker at the Pulse API or reuse the Pulse shared secret as a worker credential. Before enabling remote Vydria execution, Zyvano needs a separate authenticated worker-broker adapter that maps authorized project-owned generation jobs to v1 envelopes, issues short-lived revocable worker credentials, and durably validates progress/completion/cancellation. This compatibility checkpoint is based on the current Zyvano repository source and must be rechecked when that backend contract changes.
