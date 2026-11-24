@@ -28,11 +28,12 @@ The protocol module in `vydria_worker.protocol` is transport-neutral and intenti
 1. No local filesystem path or arbitrary URL is accepted as an input/output asset reference.
 2. No Zyvano user token, billing secret, or platform credential is accepted in worker registration or job payloads.
 3. A model is selected by an exact immutable version; workers must reject unknown versions.
-4. Jobs have an expiry, idempotency key, and request digest.
-5. Task names, dimensions, frame count, FPS, asset-reference count, progress values, and diagnostics are bounded.
-6. Unknown fields fail closed rather than being silently ignored.
-7. The worker reports opaque asset references; Zyvano remains responsible for authenticated upload/download and asset ownership.
-8. License policy and device eligibility must be checked before a job is dispatched.
+4. Jobs have an enforced expiry, a strictly formatted idempotency key, and a SHA-256 digest of the canonical wire request (all fields except `request_sha256`, JSON-encoded with sorted keys and compact separators). The worker verifies the digest before accepting the job.
+5. Task names, dimensions, frame count, FPS, asset-reference count, progress values, and diagnostics are bounded. Expired jobs are rejected at validation time; callers may inject a clock value in tests.
+6. Progress consumers use `ProgressSequenceTracker` to reject duplicate/replayed sequence numbers and decreasing progress percentages per job. The tracker is process-local; the broker remains authoritative for durable deduplication across restarts.
+7. Unknown fields fail closed rather than being silently ignored.
+8. The worker reports opaque asset references; Zyvano remains responsible for authenticated upload/download and asset ownership.
+9. License policy and device eligibility must be checked before a job is dispatched.
 
 ## VDN-H3 model policy
 
