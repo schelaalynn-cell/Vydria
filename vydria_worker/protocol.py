@@ -86,7 +86,7 @@ class WorkerRegistration:
         tasks = data["tasks"]
         if not isinstance(tasks, list) or not tasks or len(tasks) > len(TASKS):
             raise ProtocolError("tasks must be a non-empty list of supported tasks")
-        if any(task not in TASKS for task in tasks) or len(set(tasks)) != len(tasks):
+        if any(not isinstance(task, str) or task not in TASKS for task in tasks) or len(set(tasks)) != len(tasks):
             raise ProtocolError("tasks contains an unsupported or duplicate task")
         models = data["models"]
         if not isinstance(models, list) or not models or len(models) > 64:
@@ -147,7 +147,7 @@ class JobEnvelope:
         if protocol != PROTOCOL_VERSION:
             raise ProtocolError("unsupported job protocol version")
         task = data["task"]
-        if task not in TASKS:
+        if not isinstance(task, str) or task not in TASKS:
             raise ProtocolError("unsupported video task")
         model_id = _text(data["model_id"], "model_id", 96, _MODEL_ID)
         model_version = _text(data["model_version"], "model_version", 64, _VERSION)
@@ -200,7 +200,7 @@ class ProgressEvent:
         data = _mapping(value, "progress", {"job_id", "sequence", "stage", "progress", "message"},
                         {"job_id", "sequence", "stage", "progress"})
         stage = data["stage"]
-        if stage not in PROGRESS_STAGES:
+        if not isinstance(stage, str) or stage not in PROGRESS_STAGES:
             raise ProtocolError("unsupported progress stage")
         return cls(
             job_id=_uuid(data["job_id"], "job_id"),
@@ -223,7 +223,7 @@ class JobCompletion:
         data = _mapping(value, "completion", {"job_id", "status", "output_asset_refs", "error_code"},
                         {"job_id", "status", "output_asset_refs"})
         status = data["status"]
-        if status not in {"succeeded", "failed", "cancelled"}:
+        if not isinstance(status, str) or status not in {"succeeded", "failed", "cancelled"}:
             raise ProtocolError("completion status must be terminal")
         refs = data["output_asset_refs"]
         if not isinstance(refs, list) or len(refs) > 8:
