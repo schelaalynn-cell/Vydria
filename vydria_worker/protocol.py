@@ -11,6 +11,7 @@ import hashlib
 import json
 import re
 import time
+from threading import Lock
 from typing import Any
 from uuid import UUID
 
@@ -228,6 +229,33 @@ class ProgressEvent:
             progress=_integer(data["progress"], "progress", 0, 100),
             message="" if data.get("message") is None else _text(data["message"], "message", 500),
         )
+
+
+class ProgressSequenceTracker:
+    """Thread-safe per-job guard for strictly increasing sequence and progress."""
+
+    def __init__(self) -> None:
+        self._last: dict[str, tuple[int, int]] = {}
+        self._lock = Lock()
+
+    def accept(self, value: Any) -> ProgressEvent:
+        event = ProgressEvent.from_dict(value)
+        with self._lock:
+            previous = self._last.get(event.job_id)
+            if previous is not None:
+                last_sequence, last_progress = previous
+                if event.sequence <= last_sequence:
+                    raise ProtocolError("progress sequence must increase for each job")
+                if event.progress < last_progress:
+                    raise ProtocolError("progress percentage must not decrease for a job")
+            self._last[event.job_id] = (event.sequence, event.progress)
+        return event
+
+    def forget(self, job_id: str) -> None:
+        """Release sequence state after the owning job reaches a terminal state."""
+        normalized = _uuid(job_id, "job_id")
+        with self._lock:
+            self._last.pop(normalized, None)
 
 
 @dataclass(frozen=True)
